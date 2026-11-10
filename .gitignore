@@ -1,0 +1,8 @@
+node_modules/
+dist/
+test-tmp/
+*.log
+.env
+.env.*
+.DS_Store
+Thumbs.db

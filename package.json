@@ -1,0 +1,31 @@
+{
+  "name": "opencode-recent-changes",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Cursor-style review of recent agent changes for OpenCode Desktop",
+  "exports": {
+    ".": "./src/index.ts",
+    "./rpc": "./src/rpc.ts",
+    "./gui-experimental": "./dist/gui-experimental.cjs"
+  },
+  "scripts": {
+    "build": "vite build",
+    "dev": "vite build --watch",
+    "typecheck": "tsc --noEmit",
+    "test": "node --test test/timeline.test.ts test/lines.test.ts test/capture.test.ts test/unified.test.ts test/revert.test.ts test/matrix.test.ts"
+  },
+  "dependencies": {
+    "@opencode/plugin": "2.2.6"
+  },
+  "devDependencies": {
+    "@types/node": "^24.12.2",
+    "solid-js": "^1.9.17",
+    "typescript": "^5.9.3",
+    "vite": "^7.3.7",
+    "vite-plugin-solid": "^2.11.10"
+  },
+  "peerDependencies": {
+    "effect": "^4.0.0"
+  }
+}

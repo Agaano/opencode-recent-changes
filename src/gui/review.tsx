@@ -15,13 +15,32 @@ import { StepTimeline } from "./steps.tsx"
 
 type NarrowView = "steps" | "files" | "diff"
 
-export function openReviewDialog(ctx: any, session: MountedSession) {
-  ctx.dialogs.open((dialog: any) => <ReviewDialog session={session} dialog={dialog} />)
+function displayDirectory(value: string): string {
+  const parts = value.replace(/\\/g, "/").split("/").filter(Boolean)
+  return parts[parts.length - 1] ?? value
 }
 
-function ReviewDialog(props: { session: MountedSession; dialog: any }) {
+export function openReviewDialog(
+  ctx: any,
+  session: MountedSession,
+  options: { expanded?: boolean } = {},
+) {
+  ctx.dialogs.open((dialog: any) => (
+    <ReviewDialog
+      session={session}
+      dialog={dialog}
+      initialExpanded={options.expanded === true}
+    />
+  ))
+}
+
+function ReviewDialog(props: {
+  session: MountedSession
+  dialog: any
+  initialExpanded?: boolean
+}) {
   const ctx = usePlugin()
-  const [expanded, setExpanded] = createSignal(false)
+  const [expanded, setExpanded] = createSignal(props.initialExpanded === true)
 
   return (
     <Show
@@ -73,7 +92,7 @@ function ReviewDialog(props: { session: MountedSession; dialog: any }) {
             >
               Close
             </button>
-            <span class="rc-muted">{props.session.directory}</span>
+            <span class="rc-muted">{displayDirectory(props.session.directory)}</span>
             <span class="rc-spacer" />
           </div>
           <div class="rc-fullscreen-body">
@@ -425,7 +444,7 @@ export function ReviewPanel(props: {
         <button type="button" class="rc-action" onClick={refresh}>
           Refresh
         </button>
-        <span class="rc-muted">{props.session.directory}</span>
+        <span class="rc-muted">{displayDirectory(props.session.directory)}</span>
         <span class="rc-spacer" />
         <span class="rc-totals">
           <span class="rc-add">+{timeline()?.totals.additions ?? 0}</span>{" "}

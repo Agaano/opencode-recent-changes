@@ -4,7 +4,7 @@ Cursor-style review of the agent's recent code changes for **OpenCode Desktop**.
 Steps are grouped by user request, diffs are computed locally, and **git is not
 used at all**.
 
-![Review changes](docs/review-dialog.png)
+![Review changes](docs/review.png)
 
 ## Features
 
@@ -33,7 +33,8 @@ used at all**.
 ## Install
 
 ```powershell
-cd C:\Users\HONOR\work\opencode-recent-changes
+git clone https://github.com/Agaano/opencode-recent-changes.git
+cd opencode-recent-changes
 npm install
 npm run build
 ```
@@ -46,7 +47,7 @@ Add the plugin to the **global** OpenCode config (Desktop reads only
   "$schema": "https://opencode.ai/config.json",
   "plugins": [
     {
-      "package": "C:/Users/HONOR/work/opencode-recent-changes",
+      "package": "./opencode-recent-changes",
       "options": {
         "maxFileSize": 2097152,
         "contextLines": 3,
@@ -57,6 +58,9 @@ Add the plugin to the **global** OpenCode config (Desktop reads only
 }
 ```
 
+The `package` path is relative to the config file (or to the current project);
+use an absolute path if the plugin lives elsewhere.
+
 Reload the Desktop window (`Ctrl+R`) or restart the app. The server part reloads
 on config changes; the GUI bundle reloads after `npm run build` or
 `npm run dev`.
@@ -65,8 +69,8 @@ on config changes; the GUI bundle reloads after `npm run build` or
 
 | Action | How |
 |---|---|
-| Open review | `/changes`, `Ctrl+Shift+D`, or the command palette → **Review recent changes** |
-| Fullscreen | **Expand** in the dialog footer or the panel header |
+| Open review | `/changes` or the command palette → **Review recent changes** |
+| Fullscreen | **Expand** in the dialog footer or the panel header, or the command palette → **Review changes (fullscreen)** |
 | Collapse | **Collapse** in the fullscreen header |
 | Select step | click a step in the left timeline |
 | Select file | click a file in the file list |

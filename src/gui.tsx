@@ -46,6 +46,21 @@ export default Plugin.define({
     )
 
     ctx.add(
+      Command,
+      (): Command => ({
+        id: "review-fullscreen",
+        title: "Review changes (fullscreen)",
+        description: "Open the step-by-step diff fullscreen",
+        keywords: "diff changes fullscreen steps",
+        section: "session",
+        run: () => {
+          const session = ctx.sessions.current()
+          if (session) openReviewDialog(ctx, session, { expanded: true })
+        },
+      }),
+    )
+
+    ctx.add(
       MenuItem,
       (): MenuItem => {
         const session = ctx.sessions.current()

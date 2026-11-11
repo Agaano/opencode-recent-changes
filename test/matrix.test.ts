@@ -216,6 +216,34 @@ test("twenty steps and revert to the fifth", async (t) => {
   assert.ok(timeline.steps.some((step) => step.kind === "restore"))
 })
 
+test("a second instance sees changes captured by the first", async (t) => {
+  const directory = await fs.mkdtemp(path.join(os.tmpdir(), "rc-matrix-shared-"))
+  t.after(async () => {
+    await fs.rm(directory, { recursive: true, force: true })
+  })
+
+  const { ctx } = fakeContext(directory)
+  const first = new Capture(ctx, () => {}, { debug: false })
+  const second = new Capture(ctx, () => {}, { debug: false })
+  await (first as any).blobs.init()
+  await (second as any).blobs.init()
+
+  // The review UI asks for the timeline before the agent has changed anything.
+  const empty = await second.timeline("ses_root")
+  assert.equal(empty.steps.length, 0)
+
+  const file = path.join(directory, "shared.txt")
+  await prompt(first, "write the shared file")
+  await writeViaTool(first, "ses_root", file, "shared\n", "sh1")
+
+  const seen = await second.timeline("ses_root")
+  assert.equal(seen.steps.length, 1)
+  assert.equal(seen.steps[0].files, 1)
+
+  const diff = await second.file("ses_root", 1, "shared.txt")
+  assert.match(diff.patch, /\+shared/)
+})
+
 test("subagent changes aggregate into the root timeline and survive reload", async (t) => {
   const directory = await fs.mkdtemp(path.join(os.tmpdir(), "rc-matrix-sub-"))
   t.after(async () => {

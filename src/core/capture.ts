@@ -180,8 +180,19 @@ export class Capture {
 
   async timeline(sessionID: string): Promise<TimelineInfo> {
     const root = await this.rootSession(sessionID)
+    if (this.debug) log("timeline request", sessionID, "root", root)
     return this.queue.run(root, async () => {
-      const timeline = await this.load(root)
+      const timeline = await this.loadFresh(root)
+      if (this.debug) {
+        log(
+          "timeline loaded",
+          root,
+          "steps",
+          timeline.steps.length,
+          "files",
+          Object.keys(timeline.files).length,
+        )
+      }
       const open = currentStep(timeline)
 
       if (open) {
@@ -194,16 +205,18 @@ export class Capture {
     })
   }
 
-  async step(sessionID: string, stepIndex: number): Promise<{    files: Array<{
+  async step(sessionID: string, stepIndex: number): Promise<{
+    files: Array<{
       file: string
       status: "added" | "deleted" | "modified"
       additions: number
       deletions: number
+      reviewed: boolean
     }>
   }> {
     const root = await this.rootSession(sessionID)
     return this.queue.run(root, async () => {
-      const timeline = await this.load(root)
+      const timeline = await this.loadFresh(root)
       const step = timeline.steps.find((candidate) => candidate.index === stepIndex)
       if (!step) return { files: [] }
 
@@ -255,7 +268,7 @@ export class Capture {
   ): Promise<UnifiedResult> {
     const root = await this.rootSession(sessionID)
     return this.queue.run(root, async () => {
-      const timeline = await this.load(root)
+      const timeline = await this.loadFresh(root)
       const step = timeline.steps.find((candidate) => candidate.index === stepIndex)
       const empty: UnifiedResult = {
         patch: "",
@@ -308,7 +321,7 @@ export class Capture {
   ): Promise<RevertResult> {
     const root = await this.rootSession(sessionID)
     return this.queue.run(root, async () => {
-      const timeline = await this.load(root)
+      const timeline = await this.loadFresh(root)
       const targetStep = timeline.steps.find((step) => step.index === stepIndex)
       if (!targetStep) return { ok: false, restored: [], conflicts: [], error: "invalid_step" }
       if (file && !timeline.files[file]) {
@@ -420,7 +433,7 @@ export class Capture {
   ): Promise<AcceptResult> {
     const root = await this.rootSession(sessionID)
     return this.queue.run(root, async () => {
-      const timeline = await this.load(root)
+      const timeline = await this.loadFresh(root)
       const latest = timeline.steps[timeline.steps.length - 1]?.index ?? 0
       const target =
         stepIndex === undefined ? latest : Math.max(0, Math.min(stepIndex, latest))
@@ -696,14 +709,27 @@ export class Capture {
     if (cached) return cached
 
     const stored = await this.store.load(root)
-    const timeline =
-      stored ??
-      createTimeline(
-        root,
-        this.directories.get(root) ?? this.ctx.location?.directory ?? process.cwd(),
-      )
-    this.cache.set(root, timeline)
-    return timeline
+    if (stored) {
+      this.cache.set(root, stored)
+      return stored
+    }
+
+    // Do not cache a timeline this instance has not captured yet: another
+    // plugin instance may persist the same session later, and the RPC reads
+    // must see it.
+    return createTimeline(
+      root,
+      this.directories.get(root) ?? this.ctx.location?.directory ?? process.cwd(),
+    )
+  }
+
+  private async loadFresh(root: string): Promise<SessionTimeline> {
+    const stored = await this.store.load(root)
+    if (stored) {
+      this.cache.set(root, stored)
+      return stored
+    }
+    return this.load(root)
   }
 
   private async save(timeline: SessionTimeline): Promise<void> {
